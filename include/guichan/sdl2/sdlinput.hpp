@@ -41,11 +41,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCN_ALLEGROINPUT_HPP
-#define GCN_ALLEGROINPUT_HPP
+#ifndef GCN_SDLINPUT_HPP
+#define GCN_SDLINPUT_HPP
 
-#include <map>
 #include <queue>
+
+#include "SDL2/SDL.h"
 
 #include "guichan/input.hpp"
 #include "guichan/keyinput.hpp"
@@ -54,22 +55,34 @@
 
 namespace gcn
 {
+    class Key;
+
     /**
-     * Allegro implementation of the Input.
+     * SDL implementation of Input.
      */
-    class GCN_EXTENSION_DECLSPEC AllegroInput : public Input
+    class GCN_EXTENSION_DECLSPEC SDLInput : public Input
     {
     public:
 
         /**
          * Constructor.
          */
-        AllegroInput();
+        SDLInput();
 
         /**
-         * Destructor.
+         * Pushes an SDL event. It should be called at least once per frame to
+         * update input with user input.
+         *
+         * @param event an event from SDL.
          */
-        virtual ~AllegroInput() { }
+        virtual void pushInput(SDL_Event event);
+
+        /**
+         * Polls all input. It exists for input driver compatibility. If you
+         * only use SDL and plan sticking with SDL you can safely ignore this
+         * function as it in the SDL case does nothing.
+         */
+        virtual void _pollInput() { }
 
 
         // Inherited from Input
@@ -82,42 +95,31 @@ namespace gcn
 
         virtual MouseInput dequeueMouseInput();
 
-        virtual void _pollInput();
-
     protected:
         /**
-         * Handles the mouse input called by _pollInput.
+         * Converts a mouse button from SDL to a Guichan mouse button
+         * representation.
+         *
+         * @param button an SDL mouse button.
+         * @return a Guichan mouse button.
          */
-        virtual void pollMouseInput();
-
+        int convertMouseButton(int button);
+                
         /**
-         * Handles the key input called by _pollInput.
+         * Converts an SDL event to a Guichan key value.
+         *
+         * @param keysym The SDL event to convert.
+         * @return A Guichan key value. -1 if no conversion took place.
+         * @see Key
          */
-        virtual void pollKeyInput();
+        int convertSDLEventToGuichanKeyValue(SDL_Event event);
 
-        /**
-         * Converts scancode and unicode to Key object.
-         */
-        virtual Key convertToKey(int scancode, int unicode);
+        std::queue<KeyInput> mKeyInputQueue;
+        std::queue<MouseInput> mMouseInputQueue;
 
-        virtual bool isNumericPad(int scancode);
-
-        // This map holds the currently pressed Keys
-        // so we can send the correct key releases.
-        // it maps from scancode to key objects.
-        std::map<int, KeyInput> mPressedKeys;
-
-        std::queue<KeyInput> mKeyQueue;
-        std::queue<MouseInput> mMouseQueue;
-
-        bool mMouseButton1, mMouseButton2, mMouseButton3;
-        int mLastMouseX, mLastMouseY, mLastMouseZ;
+        bool mMouseDown;
+        bool mMouseInWindow;
     };
 }
 
-#endif // end GCN_INPUT_HPP
-
-/*
- * finalman - "A dyslectic walks in to a bra..."
- * yakslem  - "...eh...ok..."
- */
+#endif // end GCN_SDLINPUT_HPP

@@ -41,83 +41,82 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCN_ALLEGROINPUT_HPP
-#define GCN_ALLEGROINPUT_HPP
+/*
+ * For comments regarding functions please see the header file.
+ */
 
-#include <map>
-#include <queue>
+#include "guichan/sdl2/sdlimage.hpp"
 
-#include "guichan/input.hpp"
-#include "guichan/keyinput.hpp"
-#include "guichan/mouseinput.hpp"
-#include "guichan/platform.hpp"
+#include "SDL_image.h"
+
+#include "guichan/exception.hpp"
+#include "guichan/sdl2/sdlimageloader.hpp"
 
 namespace gcn
 {
-    /**
-     * Allegro implementation of the Input.
-     */
-    class GCN_EXTENSION_DECLSPEC AllegroInput : public Input
+    Image* SDLImageLoader::load(const std::string& filename,
+                                bool convertToDisplayFormat)
     {
-    public:
+        SDL_Surface *loadedSurface = loadSDLSurface(filename);
 
-        /**
-         * Constructor.
-         */
-        AllegroInput();
+        if (loadedSurface == NULL)
+        {
+            throw GCN_EXCEPTION(
+                    std::string("Unable to load image file: ") + filename);
+        }
 
-        /**
-         * Destructor.
-         */
-        virtual ~AllegroInput() { }
+        SDL_Surface *surface = convertToStandardFormat(loadedSurface);
+        SDL_FreeSurface(loadedSurface);
 
+        if (surface == NULL)
+        {
+            throw GCN_EXCEPTION(
+                    std::string("Not enough memory to load: ") + filename);
+        }
 
-        // Inherited from Input
+        Image *image = new SDLImage(surface, true);
 
-        virtual bool isKeyQueueEmpty();
+        if (convertToDisplayFormat)
+        {
+            image->convertToDisplayFormat();
+        }
 
-        virtual KeyInput dequeueKeyInput();
+        return image;
+    }
 
-        virtual bool isMouseQueueEmpty();
+    SDL_Surface* SDLImageLoader::loadSDLSurface(const std::string& filename)
+    {
+        return IMG_Load(filename.c_str());
+    }
 
-        virtual MouseInput dequeueMouseInput();
+    SDL_Surface* SDLImageLoader::convertToStandardFormat(SDL_Surface* surface)
+    {
+        Uint32 rmask, gmask, bmask, amask;
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+        rmask = 0xff000000;
+        gmask = 0x00ff0000;
+        bmask = 0x0000ff00;
+        amask = 0x000000ff;
+#else
+        rmask = 0x000000ff;
+        gmask = 0x0000ff00;
+        bmask = 0x00ff0000;
+        amask = 0xff000000;
+#endif
 
-        virtual void _pollInput();
+        SDL_Surface *colorSurface = SDL_CreateRGBSurface(SDL_SWSURFACE,
+                0, 0, 32,
+                rmask, gmask, bmask, amask);
 
-    protected:
-        /**
-         * Handles the mouse input called by _pollInput.
-         */
-        virtual void pollMouseInput();
+        SDL_Surface *tmp = NULL;
 
-        /**
-         * Handles the key input called by _pollInput.
-         */
-        virtual void pollKeyInput();
+        if (colorSurface != NULL)
+        {
+            tmp = SDL_ConvertSurface(surface, colorSurface->format,
+                                     SDL_SWSURFACE);
+            SDL_FreeSurface(colorSurface);
+        }
 
-        /**
-         * Converts scancode and unicode to Key object.
-         */
-        virtual Key convertToKey(int scancode, int unicode);
-
-        virtual bool isNumericPad(int scancode);
-
-        // This map holds the currently pressed Keys
-        // so we can send the correct key releases.
-        // it maps from scancode to key objects.
-        std::map<int, KeyInput> mPressedKeys;
-
-        std::queue<KeyInput> mKeyQueue;
-        std::queue<MouseInput> mMouseQueue;
-
-        bool mMouseButton1, mMouseButton2, mMouseButton3;
-        int mLastMouseX, mLastMouseY, mLastMouseZ;
-    };
+        return tmp;
+    }
 }
-
-#endif // end GCN_INPUT_HPP
-
-/*
- * finalman - "A dyslectic walks in to a bra..."
- * yakslem  - "...eh...ok..."
- */

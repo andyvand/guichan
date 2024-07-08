@@ -41,83 +41,33 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCN_ALLEGROINPUT_HPP
-#define GCN_ALLEGROINPUT_HPP
+#ifndef GCN_SDLIMAGELOADER_HPP
+#define GCN_SDLIMAGELOADER_HPP
 
-#include <map>
-#include <queue>
-
-#include "guichan/input.hpp"
-#include "guichan/keyinput.hpp"
-#include "guichan/mouseinput.hpp"
+#include "guichan/imageloader.hpp"
 #include "guichan/platform.hpp"
+
+#include "SDL2/SDL.h"
 
 namespace gcn
 {
+    class Image;
+
     /**
-     * Allegro implementation of the Input.
+     * SDL implementation of ImageLoader.
      */
-    class GCN_EXTENSION_DECLSPEC AllegroInput : public Input
+    class GCN_EXTENSION_DECLSPEC SDLImageLoader : public ImageLoader
     {
     public:
 
-        /**
-         * Constructor.
-         */
-        AllegroInput();
+        // Inherited from ImageLoader
 
-        /**
-         * Destructor.
-         */
-        virtual ~AllegroInput() { }
-
-
-        // Inherited from Input
-
-        virtual bool isKeyQueueEmpty();
-
-        virtual KeyInput dequeueKeyInput();
-
-        virtual bool isMouseQueueEmpty();
-
-        virtual MouseInput dequeueMouseInput();
-
-        virtual void _pollInput();
+        virtual Image* load(const std::string& filename, bool convertToDisplayFormat = true);
 
     protected:
-        /**
-         * Handles the mouse input called by _pollInput.
-         */
-        virtual void pollMouseInput();
-
-        /**
-         * Handles the key input called by _pollInput.
-         */
-        virtual void pollKeyInput();
-
-        /**
-         * Converts scancode and unicode to Key object.
-         */
-        virtual Key convertToKey(int scancode, int unicode);
-
-        virtual bool isNumericPad(int scancode);
-
-        // This map holds the currently pressed Keys
-        // so we can send the correct key releases.
-        // it maps from scancode to key objects.
-        std::map<int, KeyInput> mPressedKeys;
-
-        std::queue<KeyInput> mKeyQueue;
-        std::queue<MouseInput> mMouseQueue;
-
-        bool mMouseButton1, mMouseButton2, mMouseButton3;
-        int mLastMouseX, mLastMouseY, mLastMouseZ;
+        virtual SDL_Surface* loadSDLSurface(const std::string& filename);
+        virtual SDL_Surface* convertToStandardFormat(SDL_Surface* surface);
     };
 }
 
-#endif // end GCN_INPUT_HPP
-
-/*
- * finalman - "A dyslectic walks in to a bra..."
- * yakslem  - "...eh...ok..."
- */
+#endif // end GCN_SDLIMAGELOADER_HPP

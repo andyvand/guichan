@@ -41,13 +41,67 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * For comments regarding functions please see the header file.
- */
+#ifndef GCN_SDLIMAGE_HPP
+#define GCN_SDLIMAGE_HPP
 
-#include "guichan/opengl3.hpp"
+#include "SDL2/SDL.h"
 
-extern "C"
+#include <string>
+
+#include "guichan/color.hpp"
+#include "guichan/platform.hpp"
+#include "guichan/image.hpp"
+
+namespace gcn
 {
-    void gcnOpenGL3() { }
+    /**
+     * SDL implementation of Image.
+     */
+    class GCN_EXTENSION_DECLSPEC SDLImage : public Image
+    {
+    public:
+        /**
+         * Constructor. Load an image from an SDL surface.
+         *
+         * NOTE: The functions getPixel and putPixel are only guaranteed to work
+         *       before an image has been converted to display format.
+         *
+         * @param surface the surface from which to load.
+         * @param autoFree true if the surface should automatically be deleted.
+         */
+        SDLImage(SDL_Surface* surface, bool autoFree);
+
+        /**
+         * Destructor.
+         */
+        virtual ~SDLImage();
+
+        /**
+         * Gets the SDL surface for the image.
+         *
+         * @return the SDL surface for the image.
+         */
+        virtual SDL_Surface* getSurface() const;
+
+
+        // Inherited from Image
+
+        virtual void free();
+
+        virtual int getWidth() const;
+
+        virtual int getHeight() const;
+
+        virtual Color getPixel(int x, int y);
+
+        virtual void putPixel(int x, int y, const Color& color);
+
+        virtual void convertToDisplayFormat();
+
+    protected:
+        SDL_Surface* mSurface;
+        bool mAutoFree;
+    };
 }
+
+#endif // end GCN_SDLIMAGE_HPP

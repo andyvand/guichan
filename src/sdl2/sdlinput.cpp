@@ -45,7 +45,7 @@
  * For comments regarding functions please see the header file.
  */
 
-#include "guichan/sdl/sdlinput.hpp"
+#include "guichan/sdl2/sdlinput.hpp"
 
 #include "guichan/exception.hpp"
 
@@ -110,16 +110,16 @@ namespace gcn
 
               if (value == -1)
               {
-                  value = (int)event.key.keysym.unicode;
-              } 
+                  value = (int)event.key.keysym.sym;
+              }
                
               keyInput.setKey(Key(value));
               keyInput.setType(KeyInput::Pressed);
               keyInput.setShiftPressed(event.key.keysym.mod & KMOD_SHIFT);
               keyInput.setControlPressed(event.key.keysym.mod & KMOD_CTRL);
               keyInput.setAltPressed(event.key.keysym.mod & KMOD_ALT);
-              keyInput.setMetaPressed(event.key.keysym.mod & KMOD_META);
-              keyInput.setNumericPad(event.key.keysym.sym >= SDLK_KP0
+              keyInput.setMetaPressed(event.key.keysym.mod & KMOD_GUI);
+              keyInput.setNumericPad(event.key.keysym.sym >= SDLK_KP_0
                                      && event.key.keysym.sym <= SDLK_KP_EQUALS);
 
               mKeyInputQueue.push(keyInput);
@@ -140,8 +140,8 @@ namespace gcn
               keyInput.setShiftPressed(event.key.keysym.mod & KMOD_SHIFT);
               keyInput.setControlPressed(event.key.keysym.mod & KMOD_CTRL);
               keyInput.setAltPressed(event.key.keysym.mod & KMOD_ALT);
-              keyInput.setMetaPressed(event.key.keysym.mod & KMOD_META);
-              keyInput.setNumericPad(event.key.keysym.sym >= SDLK_KP0
+              keyInput.setMetaPressed(event.key.keysym.mod & KMOD_GUI);
+              keyInput.setNumericPad(event.key.keysym.sym >= SDLK_KP_0
                                      && event.key.keysym.sym <= SDLK_KP_EQUALS);
 
               mKeyInputQueue.push(keyInput);
@@ -149,23 +149,27 @@ namespace gcn
           }
 
           case SDL_MOUSEBUTTONDOWN:
+              SDL_Event evenements;
               mMouseDown = true;
               mouseInput.setX(event.button.x);
               mouseInput.setY(event.button.y);
               mouseInput.setButton(convertMouseButton(event.button.button));
+              while (SDL_PollEvent(&evenements))
+              {
+                        switch (evenements.type)
+                        {
+                                case SDL_MOUSEBUTTONUP:
+                                case SDL_MOUSEBUTTONDOWN:
+                                    mouseInput.setType(MouseInput::Pressed);
+                                    break;
+                                case SDL_MOUSEWHEEL:
+                                    if (evenements.wheel.y < 0)
+                                        mouseInput.setType(MouseInput::WheelMovedDown);
+                                    else
+                                        mouseInput.setType(MouseInput::WheelMovedUp);
+                        }
+              }
 
-              if (event.button.button == SDL_BUTTON_WHEELDOWN)
-              {
-                  mouseInput.setType(MouseInput::WheelMovedDown);
-              }
-              else if (event.button.button == SDL_BUTTON_WHEELUP)
-              {
-                  mouseInput.setType(MouseInput::WheelMovedUp);
-              }
-              else
-              {
-                  mouseInput.setType(MouseInput::Pressed);
-              }
               mouseInput.setTimeStamp(SDL_GetTicks());
               mMouseInputQueue.push(mouseInput);
               break;
@@ -189,13 +193,13 @@ namespace gcn
               mMouseInputQueue.push(mouseInput);
               break;
 
-          case SDL_ACTIVEEVENT:
+          case SDL_WINDOWEVENT_ENTER:
+          case SDL_WINDOWEVENT_LEAVE:
               /*
                * This occurs when the mouse leaves the window and the Gui-chan
                * application loses its mousefocus.
                */
-              if ((event.active.state & SDL_APPMOUSEFOCUS)
-                  && !event.active.gain)
+              if (event.key.state & SDL_WINDOWEVENT_FOCUS_GAINED)
               {
                   mMouseInWindow = false;
 
@@ -209,8 +213,7 @@ namespace gcn
                   }
               }
 
-              if ((event.active.state & SDL_APPMOUSEFOCUS)
-                  && event.active.gain)
+              if (event.key.state & SDL_WINDOWEVENT_FOCUS_GAINED)
               {
                   mMouseInWindow = true;
               }
@@ -276,7 +279,7 @@ namespace gcn
               // with the keysym.sym SDLK_SPACE which
               // without this check would be lost. The check
               // is only valid on key down events in SDL.
-              if (event.type == SDL_KEYUP || event.key.keysym.unicode == ' ')
+              if (event.type == SDL_KEYUP || event.key.keysym.sym == ' ')
               {
                   value = Key::Space;
               }
@@ -299,7 +302,7 @@ namespace gcn
           case SDLK_PAGEUP:
               value = Key::PageUp;
               break;
-          case SDLK_PRINT:
+          case SDLK_PRINTSCREEN:
               value = Key::PrintScreen;
               break;
           case SDLK_PAGEDOWN:
@@ -350,26 +353,23 @@ namespace gcn
           case SDLK_F15:
               value = Key::F15;
               break;
-          case SDLK_NUMLOCK:
+          case SDLK_NUMLOCKCLEAR:
               value = Key::NumLock;
               break;
           case SDLK_CAPSLOCK:
               value = Key::CapsLock;
               break;
-          case SDLK_SCROLLOCK:
+          case SDLK_SCROLLLOCK:
               value = Key::ScrollLock;
               break;
-          case SDLK_RMETA:
+          case SDLK_RGUI:
               value = Key::RightMeta;
               break;
-          case SDLK_LMETA:
+          case SDLK_LGUI:
               value = Key::LeftMeta;
               break;
-          case SDLK_LSUPER:
+          case SDLK_OPER:
               value = Key::LeftSuper;
-              break;
-          case SDLK_RSUPER:
-              value = Key::RightSuper;
               break;
           case SDLK_MODE:
               value = Key::AltGr;
@@ -401,34 +401,34 @@ namespace gcn
         {
             switch (event.key.keysym.sym)
             {
-              case SDLK_KP0:
+              case SDLK_KP_0:
                   value = Key::Insert;
                   break;
-              case SDLK_KP1:
+              case SDLK_KP_1:
                   value = Key::End;
                   break;
-              case SDLK_KP2:
+              case SDLK_KP_2:
                   value = Key::Down;
                   break;
-              case SDLK_KP3:
+              case SDLK_KP_3:
                   value = Key::PageDown;
                   break;
-              case SDLK_KP4:
+              case SDLK_KP_4:
                   value = Key::Left;
                   break;
-              case SDLK_KP5:
+              case SDLK_KP_5:
                   value = 0;
                   break;
-              case SDLK_KP6:
+              case SDLK_KP_6:
                   value = Key::Right;
                   break;
-              case SDLK_KP7:
+              case SDLK_KP_7:
                   value = Key::Home;
                   break;
-              case SDLK_KP8:
+              case SDLK_KP_8:
                   value = Key::Up;
                   break;
-              case SDLK_KP9:
+              case SDLK_KP_9:
                   value = Key::PageUp;
                   break;
               default:

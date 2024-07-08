@@ -45,10 +45,10 @@
  * For comments regarding functions please see the header file.
  */
 
-#include "guichan/sdl/sdlimage.hpp"
+#include "guichan/sdl2/sdlimage.hpp"
 
 #include "guichan/exception.hpp"
-#include "guichan/sdl/sdlpixel.hpp"
+#include "guichan/sdl2/sdlpixel.hpp"
 
 namespace gcn
 {
@@ -149,13 +149,13 @@ namespace gcn
 
         if (hasAlpha)
         {
-            tmp = SDL_DisplayFormatAlpha(mSurface);
+            tmp = SDL_ConvertSurfaceFormat(mSurface, SDL_PIXELFORMAT_RGBA8888, 0);
             SDL_FreeSurface(mSurface);
             mSurface = NULL;
         }
         else
         {
-            tmp = SDL_DisplayFormat(mSurface);
+            tmp = SDL_ConvertSurfaceFormat(mSurface, SDL_PIXELFORMAT_RGBA8888, 0);
             SDL_FreeSurface(mSurface);
             mSurface = NULL;
         }
@@ -167,12 +167,11 @@ namespace gcn
 
         if (hasPink)
         {
-            SDL_SetColorKey(tmp, SDL_SRCCOLORKEY,
-                            SDL_MapRGB(tmp->format,255,0,255));
+            SDL_SetColorKey(tmp, true, SDL_MapRGB(tmp->format,255,0,255));
         }
         if (hasAlpha)
         {
-            SDL_SetAlpha(tmp, SDL_SRCALPHA, 255);
+            SDL_SetSurfaceAlphaMod(tmp, 255);
         }
 
         mSurface = tmp;

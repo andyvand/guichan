@@ -41,25 +41,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCN_OPENGL3GRAPHICS_HPP
-#define GCN_OPENGL3GRAPHICS_HPP
+#ifndef GCN_SDLGRAPHICS_HPP
+#define GCN_SDLGRAPHICS_HPP
 
-#if defined (_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
-#if defined (__amigaos4__)
-#include <mgl/gl.h>
-#elif defined (__APPLE__)
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
-#endif
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "SDL2/SDL.h"
 
 #include "guichan/color.hpp"
 #include "guichan/graphics.hpp"
@@ -67,10 +52,13 @@
 
 namespace gcn
 {
+    class Image;
+    class Rectangle;
+
     /**
-     * OpenGL3 implementation of the Graphics.
+     * SDL implementation of the Graphics.
      */
-    class GCN_EXTENSION_DECLSPEC OpenGL3Graphics: public Graphics
+    class GCN_EXTENSION_DECLSPEC SDLGraphics : public Graphics
     {
     public:
 
@@ -80,50 +68,37 @@ namespace gcn
         /**
          * Constructor.
          */
-        OpenGL3Graphics();
+        SDLGraphics();
 
         /**
-         * Constructor.
-		 *
-		 * @param width the width of the logical drawing surface. Should be the
-         *              same as the screen resolution.
-		 *
-		 * @param height the height ot the logical drawing surface. Should be
-		 *               the same as the screen resolution.
-		 */
-        OpenGL3Graphics(int width, int height);
-
-		/**
-		 * Destructor.
-		 */
-        virtual ~OpenGL3Graphics();
-
-        /**
-         * Sets the target plane on where to draw.
-		 *
-		 * @param width the width of the logical drawing surface. Should be the
-		 *              same as the screen resolution.
-		 * @param height the height ot the logical drawing surface. Should be
-		 *               the same as the screen resolution.
-         */
-        virtual void setTargetPlane(int width, int height);
-
-        /**
-         * Gets the target plane width.
+         * Sets the target SDL_Surface to draw to. The target can be any
+         * SDL_Surface. This funtion also pushes a clip areas corresponding to
+         * the dimension of the target.
          *
-         * @return The target plane width.
+         * @param target the target to draw to.
          */
-        virtual int getTargetPlaneWidth() const;
+        virtual void setTarget(SDL_Surface* target);
 
         /**
-         * Gets the target plane height.
+         * Gets the target SDL_Surface.
          *
-         * @return The target plane height.
+         * @return the target SDL_Surface.
          */
-        virtual int getTargetPlaneHeight() const;
+        virtual SDL_Surface* getTarget() const;
+
+        /**
+         * Draws an SDL_Surface on the target surface. Normaly you'll
+         * use drawImage, but if you want to write SDL specific code
+         * this function might come in handy.
+         *
+         * NOTE: The clip areas will be taken into account.
+         */
+        virtual void drawSDLSurface(SDL_Surface* surface,
+                                    SDL_Rect source,
+                                    SDL_Rect destination);
 
 
-		// Inherited from Graphics
+        // Inherited from Graphics
 
         virtual void _beginDraw();
 
@@ -151,26 +126,31 @@ namespace gcn
 
         virtual void setColor(const Color& color);
 
-		virtual const Color& getColor() const;
+        virtual const Color& getColor() const;
 
     protected:
-        int mWidth, mHeight;
-		bool mAlpha;
+        /**
+         * Draws a horizontal line.
+         *
+         * @param x1 the start coordinate of the line.
+         * @param y the y coordinate of the line.
+         * @param x2 the end coordinate of the line.
+         */
+        virtual void drawHLine(int x1, int y, int x2);
+
+        /**
+         * Draws a vertical line.
+         *
+         * @param x the x coordinate of the line.
+         * @param y1 the start coordinate of the line.
+         * @param y2 the end coordinate of the line.
+         */
+        virtual void drawVLine(int x, int y1, int y2);
+
+        SDL_Surface* mTarget;
         Color mColor;
-
-        GLuint mVBO;
-
-        GLuint mImageShader;
-        GLuint mLineShader;
-
-        glm::mat4 mProjection;
-
-        mutable bool mInitialize;
-
-    private:
-
-        GLuint createShaderProgram(const std::string& vs, const std::string& fs);
+        bool mAlpha;
     };
 }
 
-#endif // end GCN_OPENGL3GRAPHICS_HPP
+#endif // end GCN_SDLGRAPHICS_HPP

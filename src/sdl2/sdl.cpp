@@ -41,20 +41,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GCN_OPENGL3_HPP
-#define GCN_OPENGL3_HPP
+/*
+ * For comments regarding functions please see the header file.
+ */
 
-#include <guichan/opengl3/opengl3graphics.hpp>
-#include <guichan/opengl3/opengl3image.hpp>
-
-#include "guichan/platform.hpp"
+#include "guichan/sdl.hpp"
 
 extern "C"
 {
-    /**
-     * Exists to be able to check for Guichan OpenGL with autotools.
-     */
-    GCN_EXTENSION_DECLSPEC extern void gcnOpenGL3();
+    void gcnSDL() { }
 }
-
-#endif // end GCN_OPENGL3_HPP
