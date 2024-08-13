@@ -51,6 +51,42 @@
 
 namespace gcn
 {
+static Uint32 utf8ToUnicode(const char* text)
+{
+    const Uint32 c0 = static_cast<unsigned char>(text[0]);
+    if ((c0 & 0xF8) == 0xF0) {
+        if (((text[1] & 0xC0) != 0x80) && ((text[2] & 0xC0) != 0x80)
+            && ((text[3] & 0xC0) != 0x80)) {
+            throw GCN_EXCEPTION("invalid utf8");
+        }
+        const unsigned char c1 = text[1] & 0x3F;
+        const unsigned char c2 = text[2] & 0x3F;
+        const unsigned char c3 = text[3] & 0x3F;
+
+        return ((c0 & 0x07) << 18) | (c1 << 12) | (c2 << 6) | c3;
+    } else if ((c0 & 0xF0) == 0xE0) {
+        if (((text[1] & 0xC0) != 0x80) && ((text[2] & 0xC0) != 0x80)) {
+            throw GCN_EXCEPTION("invalid utf8");
+        }
+        const unsigned char c1 = text[1] & 0x3F;
+        const unsigned char c2 = text[2] & 0x3F;
+
+        return ((c0 & 0x0F) << 12) | (c1 << 6) | c2;
+    } else if ((c0 & 0xE0) == 0xC0) {
+        if (((text[1] & 0xC0) != 0x80)) {
+            throw GCN_EXCEPTION("invalid utf8");
+        }
+        const unsigned char c1 = text[1] & 0x3F;
+
+        return ((c0 & 0x1F) << 6) | c1;
+    } else {
+        if ((c0 & 0x80) != 0) {
+            throw GCN_EXCEPTION("invalid utf8");
+        }
+        return (c0 & 0x7F);
+    }
+}
+
     SDLInput::SDLInput()
     {
         mMouseInWindow = true;
@@ -104,6 +140,18 @@ namespace gcn
 
         switch (event.type)
         {
+          case SDL_TEXTINPUT:
+              keyInput.setKey(utf8ToUnicode(event.text.text));
+              keyInput.setType(KeyInput::PRESSED);
+              keyInput.setShiftPressed(false);
+              keyInput.setControlPressed(false);
+              keyInput.setAltPressed(false);
+              keyInput.setMetaPressed(false);
+              keyInput.setNumericPad(false);
+
+              mKeyInputQueue.push(keyInput);
+              break;
+
           case SDL_KEYDOWN:
           {
               int value = convertSDLEventToGuichanKeyValue(event);
@@ -149,23 +197,27 @@ namespace gcn
           }
 
           case SDL_MOUSEBUTTONDOWN:
+              SDL_Event evenements;
               mMouseDown = true;
               mouseInput.setX(event.button.x);
               mouseInput.setY(event.button.y);
               mouseInput.setButton(convertMouseButton(event.button.button));
+              while (SDL_PollEvent(&evenements))
+              {
+                    switch (evenements.type)
+                    {
+                        case SDL_MOUSEBUTTONUP:
+                        case SDL_MOUSEBUTTONDOWN:
+                            mouseInput.setType(MouseInput::Pressed);
+                            break;
+                        case SDL_MOUSEWHEEL:
+                            if (evenements.wheel.y < 0)
+                                mouseInput.setType(MouseInput::WheelMovedDown);
+                            else
+                                mouseInput.setType(MouseInput::WheelMovedUp);
+                    }
+              }
 
-              if (event.button.button == SDL_BUTTON_WHEELDOWN)
-              {
-                  mouseInput.setType(MouseInput::WheelMovedDown);
-              }
-              else if (event.button.button == SDL_BUTTON_WHEELUP)
-              {
-                  mouseInput.setType(MouseInput::WheelMovedUp);
-              }
-              else
-              {
-                  mouseInput.setType(MouseInput::Pressed);
-              }
               mouseInput.setTimeStamp(SDL_GetTicks());
               mMouseInputQueue.push(mouseInput);
               break;
@@ -189,13 +241,13 @@ namespace gcn
               mMouseInputQueue.push(mouseInput);
               break;
 
-          case SDL_ACTIVEEVENT:
+            case SDL_WINDOWEVENT_ENTER:
+            case SDL_WINDOWEVENT_LEAVE:
               /*
                * This occurs when the mouse leaves the window and the Gui-chan
                * application loses its mousefocus.
                */
-              if ((event.active.state & SDL_APPMOUSEFOCUS)
-                  && !event.active.gain)
+              if (event.window.event & SDL_WINDOWEVENT_LEAVE)
               {
                   mMouseInWindow = false;
 
@@ -203,14 +255,13 @@ namespace gcn
                   {
                       mouseInput.setX(-1);
                       mouseInput.setY(-1);
-                      mouseInput.setButton(MouseInput::Empty);
-                      mouseInput.setType(MouseInput::Moved);
+                      mouseInput.setButton(MouseInput::EMPTY);
+                      mouseInput.setType(MouseInput::MOVED);
                       mMouseInputQueue.push(mouseInput);
                   }
               }
 
-              if ((event.active.state & SDL_APPMOUSEFOCUS)
-                  && event.active.gain)
+              if (event.window.event & SDL_WINDOWEVENT_ENTER)
               {
                   mMouseInWindow = true;
               }

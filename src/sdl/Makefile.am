@@ -11,7 +11,8 @@ libguichan_sdl_la_SOURCES =	\
 	sdlgraphics.cpp		\
 	sdlimage.cpp		\
 	sdlimageloader.cpp	\
-	sdlinput.cpp
+	sdlinput.cpp		\
+	../contrib/sdl2/sdltruetypefont.cpp
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = guichan_sdl.pc

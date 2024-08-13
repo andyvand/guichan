@@ -44,10 +44,11 @@
 #ifndef GCN_SDL_HPP
 #define GCN_SDL_HPP
 
-#include <guichan/sdl/sdlgraphics.hpp>
-#include <guichan/sdl/sdlimage.hpp>
-#include <guichan/sdl/sdlimageloader.hpp>
-#include <guichan/sdl/sdlinput.hpp>
+#include <guichan/sdl2/sdlgraphics.hpp>
+#include <guichan/sdl2/sdl2graphics.hpp>
+#include <guichan/sdl2/sdlimage.hpp>
+#include <guichan/sdl2/sdlimageloader.hpp>
+#include <guichan/sdl2/sdlinput.hpp>
 
 #include "platform.hpp"
 

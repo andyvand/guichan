@@ -9,6 +9,7 @@ libguichan_sdl_la_LDFLAGS = -no-undefined -release $(LT_RELEASE) -version-info $
 libguichan_sdl_la_SOURCES =	\
 	sdl.cpp			\
 	sdlgraphics.cpp		\
+	sdl2graphics.cpp	\
 	sdlimage.cpp		\
 	sdlimageloader.cpp	\
 	sdlinput.cpp

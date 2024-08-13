@@ -8,8 +8,11 @@
 
 namespace sdl
 {
+    SDL_Window* window = NULL;
+    SDL_Renderer* renderer;
+
     bool running = true;
-    SDL_Surface* screen;
+    SDL_Surface* screen = NULL;
 
     // All back ends contain objects to make Guichan work on a
     // specific target - in this case SDL - and they are a Graphics
@@ -17,7 +20,11 @@ namespace sdl
     // input objec to make Guichan able to get user input using SDL
     // and an ImageLoader object to make Guichan able to load images
     // using SDL.
+#if SDL
     gcn::SDLGraphics* graphics;
+#else
+    gcn::SDL2Graphics* graphics;
+#endif
     gcn::SDLInput* input;
     gcn::SDLImageLoader* imageLoader;
 
@@ -28,12 +35,20 @@ namespace sdl
     void init()
     {
         // We simply initialise SDL as we would do with any SDL application.
-        SDL_Init(SDL_INIT_VIDEO);
+        SDL_Init(SDL_INIT_EVERYTHING);
+
+#ifdef SDL
         screen = SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE);
         // We want unicode for the SDLInput object to function properly.
         SDL_EnableUNICODE(1);
         // We also want to enable key repeat.
         SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
+#else
+        SDL_CreateWindowAndRenderer(640, 480, 0, &window, &renderer);
+        SDL_SetWindowTitle(window, "SDL2");
+        SDL_SetWindowPosition(window, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED);
+        screen = SDL_GetWindowSurface(window);
+#endif
 
         // Now it's time to initialise the Guichan SDL back end.
 
@@ -41,10 +56,20 @@ namespace sdl
         // The ImageLoader Guichan should use needs to be passed to the Image object
         // using a static function.
         gcn::Image::setImageLoader(imageLoader);
+#if SDL
         graphics = new gcn::SDLGraphics();
+#else
+        graphics = new gcn::SDL2Graphics();
+#endif
+
         // The Graphics object needs a target to draw to, in this case it's the
         // screen surface, but any surface will do, it doesn't have to be the screen.
+#if SDL
         graphics->setTarget(screen);
+#else
+        graphics->setTarget(renderer, 640, 480);
+#endif
+
         input = new gcn::SDLInput();
 
         // Now we create the Gui object to be used with this SDL application.
@@ -93,8 +118,12 @@ namespace sdl
                     {
                         if (event.key.keysym.mod & KMOD_CTRL)
                         {
+#if SDL
                             // Works with X11 only
                             SDL_WM_ToggleFullScreen(screen);
+#else
+                            SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+#endif
                         }
                     }
                 }
@@ -113,8 +142,12 @@ namespace sdl
             globals::gui->logic();
             // Now we let the Gui object draw itself.
             globals::gui->draw();
+#if SDL
             // Finally we update the screen.
             SDL_Flip(screen);
+#else
+            SDL_RenderPresent(renderer);
+#endif
         }
     }
 }

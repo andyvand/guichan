@@ -50,7 +50,8 @@
 #include "guichan/exception.hpp"
 #include "guichan/image.hpp"
 #include "guichan/graphics.hpp"
-#include "guichan/sdl/sdlgraphics.hpp"
+#include "guichan/sdl2/sdlgraphics.hpp"
+#include "guichan/sdl2/sdl2graphics.hpp"
 
 namespace gcn
 {
@@ -98,8 +99,9 @@ namespace gcn
             }
         
             gcn::SDLGraphics *sdlGraphics = dynamic_cast<gcn::SDLGraphics *>(graphics);
+            gcn::SDL2Graphics *sdl2Graphics = dynamic_cast<gcn::SDL2Graphics *>(graphics);
 
-            if (sdlGraphics == NULL)
+            if ((sdlGraphics == NULL) && (sdl2Graphics == NULL))
             {
                 throw GCN_EXCEPTION("SDLTrueTypeFont::drawString. Graphics object not an SDL graphics object!");
                 return;
@@ -108,7 +110,16 @@ namespace gcn
             // This is needed for drawing the Glyph in the middle if we have spacing
             int yoffset = getRowSpacing() / 2;
         
-            Color col = sdlGraphics->getColor();
+            Color col;
+
+            if (sdlGraphics)
+            {
+                col = sdlGraphics->getColor();
+            }
+            else
+            {
+                col = sdl2Graphics->getColor();
+            }
 
             SDL_Color sdlCol;
             sdlCol.b = col.b;
@@ -132,9 +143,19 @@ namespace gcn
             src.h = textSurface->h;
             src.x = 0;
             src.y = 0;
+            dst.w = src.w;
+            dst.h = src.h;
         
-            sdlGraphics->drawSDLSurface(textSurface, src, dst);
-            SDL_FreeSurface(textSurface);        
+            if (sdlGraphics)
+            {
+                sdlGraphics->drawSDLSurface(textSurface, src, dst);
+            }
+            else
+            {
+                sdl2Graphics->drawSDLSurface(textSurface, src, dst);
+            }
+            
+            SDL_FreeSurface(textSurface);
         }
     
         void SDLTrueTypeFont::setRowSpacing(int spacing)
